@@ -1,1 +1,1 @@
-# SCC-project
+# SCC Project
