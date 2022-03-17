@@ -163,18 +163,14 @@ def train(args, model, device, loader, optimizer, epoch, writer):
         ave_loss = total_loss/float(len(loader))
         writer.add_scalar("Loss", ave_loss.item(), global_step=epoch, walltime=wt)          
 #############################################################
-n = 10
-# path = '/alto/shared/SCC_newdataset/InPatients/Indatasets_allSCCs' 
-# path = '/alto/shared/SCC_newdataset/InPatients/Indatasets_infection' 
-path = f'/alto/shared/SCC_newdataset/InPatients/splits_SCC/split{n}'
-#path = '/alto/shared/SCC_newdataset/InPatients/splits_infection/split10'
+path = '/alto/shared/SCC_newdataset/InPatients/Indatasets_allSCCs' 
 
 def main():
     ## Settings
     parser = argparse.ArgumentParser(description='PyTorch MNIST Example')
     parser.add_argument('--train_data', default=f'{path}/train_set.pickle')
     parser.add_argument('--test_data', default=f'{path}/test_set.pickle')
-    parser.add_argument('--ood_data', default='/alto/shared/SCC_newdataset/InPatients/Indatasets_allSCCs/ood_set.pickle')
+    parser.add_argument('--ood_data', default=f'{path}/ood_set.pickle')
     parser.add_argument('--epochs', type=int, default=500)
     parser.add_argument('--batch-size', type=int, default=128)
     parser.add_argument('--audio-window', type=int, default=2000) 
@@ -205,12 +201,7 @@ def main():
               'pin_memory': False} if use_cuda else {}
 
     print('===> loading training dataset')
-    # 100, 500, 1k, 2k, 5k, 6k, 10k, 13,454
     trainset = load_data(args.train_data)
-    # idx = list(np.arange(len(trainset)))
-    # print(len(trainset))
-    # p_trainset, idx_shfld = shuffle(trainset, idx, random_state=0)
-    # N = 1000
     training_set = RawDataset(trainset, args.audio_window) 
     train_loader = data.DataLoader(training_set, batch_size=args.batch_size, shuffle=True, **params) 
     print("trainingset size:", len(training_set))
@@ -235,14 +226,14 @@ def main():
     model_params = sum(p.numel() for p in model.parameters() if p.requires_grad)
     print('===> Model total parameter: {}\n'.format(model_params))
     
-    exp = f'train_I_NXent_tem{temperature}_unbalanced_w{args.audio_window}_allSCC_split{n}'
+    exp = f'train_I_NXent_tem{temperature}_w{args.audio_window}_allSCC'
     if not os.path.isdir('runs'):
         os.makedirs('runs') 
     if not os.path.isdir(f'results/{exp}'):
         os.makedirs(f'results/{exp}') 
-    if not os.path.isdir(f'ckpt_splits/{exp}'):
+    if not os.path.isdir(f'ckpt/{exp}'):
         print("Creating the directory")
-        os.makedirs(f'ckpt_splits/{exp}') 
+        os.makedirs(f'ckpt/{exp}') 
         
     writer = SummaryWriter(f'runs/{exp}')
     ## Start training 
@@ -251,14 +242,9 @@ def main():
         train(args, model, device, train_loader, optimizer, epoch, writer)
         torch.save(
                 {'model': model.module.state_dict(), 'args': args},
-                f'ckpt_splits/{exp}/h_net.pt')
+                f'ckpt/{exp}/h_net.pt')
         if epoch%10 ==0:
-            cos_auc = test(args, model, exp, device, train_loader1, test_loader, ood_loader)
-            if cos_auc>=cos_auc_old:
-                torch.save(
-                    {'model': model.module.state_dict(), 'args': args},
-                     f'ckpt_splits/{exp}/h_net_best.pt')
-                cos_auc_old = cos_auc.copy() 
+            cos_auc = test(args, model, exp, device, train_loader1, test_loader, ood_loader) 
     writer.close()
 
 if __name__ == '__main__':
