@@ -14,7 +14,6 @@ from openpyxl.utils import get_column_letter, column_index_from_string
 
 def get_data(x):
     bs, _, l = x.size()
-    q = x[:,1,:]
     
     HR = x[:,0,:]   
     HR_q = x[:,1,:]
