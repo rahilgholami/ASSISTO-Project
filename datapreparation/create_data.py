@@ -55,10 +55,10 @@ def get_patient_id(fn):
     return fn.split('_')[1]
 
 if __name__=='__main__':
-    wearable_dir = '/alto/shared/SCC_newdataset/InPatients'
+    wearable_dir = 'path to data directory'
     combined_files = [fn for fn in os.listdir(wearable_dir) if '_combined_no_ibi.csv' in fn]
     
-    dataset_dir = '60_minute_intervals_aligned_20210729'
+    dataset_dir = 'name of the output file'
     output_dir = os.path.join(wearable_dir, dataset_dir)
     if not os.path.exists(output_dir):
         os.mkdir(output_dir)
