@@ -46,8 +46,6 @@ device = 'cuda'
 #############################################################
 
 def get_data(x):
-    #HR,HR_quality,SpO2,SpO2_quality,value_classification,Value_Activity,Quality_classification,
-    #steps,HRV,HRV_quality,Respiration_Rate,RR_quality
 
         HR = x[:,0,:] # Hear Rate
         HR_q = x[:,1,:]
