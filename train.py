@@ -3,7 +3,7 @@ from __future__ import print_function
 import argparse
 import os
 os.environ["CUDA_DEVICE_ORDER"]="PCI_BUS_ID"
-os.environ["CUDA_VISIBLE_DEVICES"]= "5,6,7"
+os.environ["CUDA_VISIBLE_DEVICES"]= "3,4,5"
 
 ## Libraries
 import random
@@ -26,12 +26,14 @@ from torch.utils.tensorboard import SummaryWriter
 from src.utils import *
 from src.utils import SupConLoss
 from src.resnet1d import ResNet1D
+
 ############ Control Center and Hyperparameter ###############
 wt = 0.001
-temperature = 0.1
-criterion = SupConLoss(temperature=temperature, base_temperature=0.07)
+temperature = 0.07
+criterion = SupConLoss(temperature=temperature, base_temperature=temperature)
 device = 'cuda'
 #############################################################
+
 def get_data(x):
     #HR,HR_quality,SpO2,SpO2_quality,value_classification,Value_Activity,Quality_classification,
     #steps,HRV,HRV_quality,Respiration_Rate,RR_quality
@@ -82,6 +84,7 @@ def get_data(x):
         return data 
     
 #############################################################
+
 def x_h_preparation(loader, model, device):        
     with torch.no_grad():
         h_lst = []
@@ -115,6 +118,7 @@ def calculate_aucroc(s_1, s_2, name):
         file.close() 
         return auc(FPR, TPR)    
 #############################################################    
+
 def test(args, model, exp, device, train_loader, test_loader, ood_loader):
     model.eval()
     print("in test")
@@ -128,8 +132,10 @@ def test(args, model, exp, device, train_loader, test_loader, ood_loader):
         cos_auc = calculate_aucroc(test_cos, ood_cos, f"results/{exp}/_CosineSim")  
         cos_norm_auc = calculate_aucroc(test_cos_norm, ood_cos_norm, f"results/{exp}/_CosineSim-Norm") 
         norm_auc = calculate_aucroc(test_norm, ood_norm, f"results/{exp}/_Norm")
-    return cos_auc        
+    return cos_auc       
+
 #############################################################
+
 def train(args, model, device, loader, optimizer, epoch, writer):
     model.train()
     loader = tqdm(loader)
@@ -144,14 +150,14 @@ def train(args, model, device, loader, optimizer, epoch, writer):
         x_all = torch.cat((get_data(x_1), get_data(x_2)), dim=0) 
         h = model(x_all)
         h = normalize(h)
-        sim_matrix = torch.mm(h, h.t())
         
+        sim_matrix = torch.mm(h, h.t())
         loss = NT_xent(sim_matrix, temperature=temperature) 
         
-        # bsz = labels.shape[0]
-        # h1, h2 = torch.split(h, [bsz, bsz], dim=0)
-        # features = torch.cat([h1.unsqueeze(1), h2.unsqueeze(1)], dim=1) #[bsz, n_views, hdim]
-        # loss = criterion(features)
+        #bsz = labels.shape[0]
+        #h1, h2 = torch.split(h, [bsz, bsz], dim=0)
+        #features = torch.cat([h1.unsqueeze(1), h2.unsqueeze(1)], dim=1) #[bsz, n_views, hdim]
+        #loss = criterion(features, labels.to(device))
         
         loss.backward()
         optimizer.step()
@@ -161,19 +167,19 @@ def train(args, model, device, loader, optimizer, epoch, writer):
         
     with torch.no_grad(): 
         ave_loss = total_loss/float(len(loader))
-        writer.add_scalar("Loss", ave_loss.item(), global_step=epoch, walltime=wt)          
+        writer.add_scalar("Loss", ave_loss.item(), global_step=epoch, walltime=wt)  
+        
 #############################################################
-path = '/alto/shared/SCC_newdataset/InPatients/Indatasets_allSCCs' 
 
 def main():
     ## Settings
     parser = argparse.ArgumentParser(description='PyTorch MNIST Example')
-    parser.add_argument('--train_data', default=f'{path}/train_set.pickle')
-    parser.add_argument('--test_data', default=f'{path}/test_set.pickle')
-    parser.add_argument('--ood_data', default=f'{path}/ood_set.pickle')
+    parser.add_argument('--train_data', default=None, help='path to training data')
+    parser.add_argument('--test_data', default=None, help='path to test set')
+    parser.add_argument('--ood_data', default=None, help='path to ood data')
     parser.add_argument('--epochs', type=int, default=500)
     parser.add_argument('--batch-size', type=int, default=128)
-    parser.add_argument('--audio-window', type=int, default=2000) 
+    parser.add_argument('--window-size', type=int, default=1000) 
     parser.add_argument('--hdim', type=int, default=128)
     parser.add_argument('--input-channel', type=int, default=512)
     parser.add_argument('--no-cuda', action='store_true', default=False, help='disables CUDA training')
@@ -202,38 +208,38 @@ def main():
 
     print('===> loading training dataset')
     trainset = load_data(args.train_data)
-    training_set = RawDataset(trainset, args.audio_window) 
+    training_set = RawDataset(trainset, args.window_size) 
     train_loader = data.DataLoader(training_set, batch_size=args.batch_size, shuffle=True, **params) 
     print("trainingset size:", len(training_set))
     
-    training_set1 = RawDataset(trainset, args.audio_window, train=False) 
+    training_set1 = RawDataset(trainset, args.window_size, train=False) 
     train_loader1 = data.DataLoader(training_set1, batch_size=args.batch_size, shuffle=False) 
     print("trainingset size:", len(training_set1))
     
-    test_set = RawDataset(load_data(args.test_data), args.audio_window, train=False) 
+    test_set = RawDataset(load_data(args.test_data), args.window_size, train=False) 
     test_loader = data.DataLoader(test_set, batch_size=args.batch_size, shuffle=False)
     print("testset size:", len(test_set))
     
-    ood_set = RawDataset(load_data(args.ood_data), args.audio_window, train=False) 
+    ood_set = RawDataset(load_data(args.ood_data), args.window_size, train=False) 
     ood_loader = data.DataLoader(ood_set, batch_size=args.batch_size, shuffle=False)
     print("oodset size:", len(ood_set))
     
     ## optimizer  
     optimizer = optim.Adam(
             filter(lambda p: p.requires_grad, model.parameters()), 
-            betas=(0.9, 0.98), eps=1e-09, lr= 1e-3, weight_decay=1e-4, amsgrad=True)
+            betas=(0.9, 0.98), eps=1e-09, lr= 1e-3, weight_decay=1e-3, amsgrad=True)
 
     model_params = sum(p.numel() for p in model.parameters() if p.requires_grad)
     print('===> Model total parameter: {}\n'.format(model_params))
     
-    exp = f'train_I_NXent_tem{temperature}_w{args.audio_window}_allSCC'
+    exp = f'train_NXent_tem{temperature}_w{args.window_size}'
     if not os.path.isdir('runs'):
         os.makedirs('runs') 
     if not os.path.isdir(f'results/{exp}'):
         os.makedirs(f'results/{exp}') 
-    if not os.path.isdir(f'ckpt/{exp}'):
+    if not os.path.isdir(f'ckpt_splits/{exp}'):
         print("Creating the directory")
-        os.makedirs(f'ckpt/{exp}') 
+        os.makedirs(f'ckpt_splits/{exp}') 
         
     writer = SummaryWriter(f'runs/{exp}')
     ## Start training 
@@ -242,12 +248,11 @@ def main():
         train(args, model, device, train_loader, optimizer, epoch, writer)
         torch.save(
                 {'model': model.module.state_dict(), 'args': args},
-                f'ckpt/{exp}/h_net.pt')
+                f'ckpt_splits/{exp}/h_net.pt')
         if epoch%10 ==0:
-            cos_auc = test(args, model, exp, device, train_loader1, test_loader, ood_loader) 
+            cos_auc = test(args, model, exp, device, train_loader1, test_loader, ood_loader)
+
     writer.close()
 
 if __name__ == '__main__':
     main()
-
-
