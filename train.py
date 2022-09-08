@@ -27,10 +27,6 @@ from src.utils import *
 from src.utils import SupConLoss
 from src.resnet1d import ResNet1D
 
-############ Control Center and Hyperparameter ###############
-wt = 0.001
-temperature = 0.07
-criterion = SupConLoss(temperature=temperature, base_temperature=temperature)
 device = 'cuda'
 #############################################################
 
@@ -140,7 +136,8 @@ def train(args, model, device, loader, optimizer, epoch, writer):
     model.train()
     loader = tqdm(loader)
     total_loss = 0
-
+    #criterion = SupConLoss(temperature=args.temperature, base_temperature=args.temperature)
+    
     for batch_idx, (x_1, x_2, labels) in enumerate(loader):
         optimizer.zero_grad()
         x_1 = (x_1.permute(0,2,1)).to(device) 
@@ -152,7 +149,7 @@ def train(args, model, device, loader, optimizer, epoch, writer):
         h = normalize(h)
         
         sim_matrix = torch.mm(h, h.t())
-        loss = NT_xent(sim_matrix, temperature=temperature) 
+        loss = NT_xent(sim_matrix, temperature=args.temperature) 
         
         #bsz = labels.shape[0]
         #h1, h2 = torch.split(h, [bsz, bsz], dim=0)
@@ -167,7 +164,7 @@ def train(args, model, device, loader, optimizer, epoch, writer):
         
     with torch.no_grad(): 
         ave_loss = total_loss/float(len(loader))
-        writer.add_scalar("Loss", ave_loss.item(), global_step=epoch, walltime=wt)  
+        writer.add_scalar("Loss", ave_loss.item(), global_step=epoch, walltime=0.001)  
         
 #############################################################
 
@@ -178,6 +175,7 @@ def main():
     parser.add_argument('--test_data', default=None, help='path to test set')
     parser.add_argument('--ood_data', default=None, help='path to ood data')
     parser.add_argument('--epochs', type=int, default=500)
+    parser.add_argument('--temperature', type=int, default=0.07)
     parser.add_argument('--batch-size', type=int, default=128)
     parser.add_argument('--window-size', type=int, default=1000) 
     parser.add_argument('--hdim', type=int, default=128)
@@ -232,7 +230,7 @@ def main():
     model_params = sum(p.numel() for p in model.parameters() if p.requires_grad)
     print('===> Model total parameter: {}\n'.format(model_params))
     
-    exp = f'train_NXent_tem{temperature}_w{args.window_size}'
+    exp = f'train_NXent_tem{args.temperature}_w{args.window_size}'
     if not os.path.isdir('runs'):
         os.makedirs('runs') 
     if not os.path.isdir(f'results/{exp}'):
