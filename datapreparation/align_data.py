@@ -7,8 +7,7 @@ from itertools import islice
 import sys
 from multiprocessing import Pool
 import time
-# path to outpatients: "/alto/shared/H2017A_Ddorf_27102020"
-# path to inpatients: "/alto/shared/wearable/H2017A_Ddorf"
+
 def get_interval_data(df_in, interval_length_in_seconds, patient_id):
     all_intervals = list()
     num_skipped_intervals = 0
@@ -55,7 +54,7 @@ def get_patient_id(fn):
     return fn.split('_')[1]
 
 if __name__=='__main__':
-    wearable_dir = 'path to data directory'
+    wearable_dir = 'path/to/data/directory'
     combined_files = [fn for fn in os.listdir(wearable_dir) if '_combined_no_ibi.csv' in fn]
     
     dataset_dir = 'name of the output file'
