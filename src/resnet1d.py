@@ -1,7 +1,7 @@
 """
 resnet for 1-d signal data, pytorch version
  
-Shenda Hong, Oct 2019
+Reference https://github.com/hsd1503/resnet1d/blob/master/resnet1d.py
 """
 
 import numpy as np
