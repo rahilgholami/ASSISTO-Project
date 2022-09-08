@@ -177,6 +177,8 @@ def main():
     parser.add_argument('--epochs', type=int, default=500)
     parser.add_argument('--temperature', type=int, default=0.07, help='temperature in the loss function')
     parser.add_argument('--batch-size', type=int, default=128)
+    parser.add_argument('--lr', type=int, default=1e-3, help='learning rate')
+    parser.add_argument('--weight-decay', type=int, default=1e-3)
     parser.add_argument('--window-size', type=int, default=1000) 
     parser.add_argument('--hdim', type=int, default=128, help='dimension of latent space')
     parser.add_argument('--input-channel', type=int, default=512, help='number of input channels')
@@ -225,7 +227,7 @@ def main():
     ## optimizer  
     optimizer = optim.Adam(
             filter(lambda p: p.requires_grad, model.parameters()), 
-            betas=(0.9, 0.98), eps=1e-09, lr= 1e-3, weight_decay=1e-3, amsgrad=True)
+            betas=(0.9, 0.98), eps=1e-09, lr= args.lr, weight_decay=args.weight_decay, amsgrad=True)
 
     model_params = sum(p.numel() for p in model.parameters() if p.requires_grad)
     print('===> Model total parameter: {}\n'.format(model_params))
