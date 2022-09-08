@@ -49,7 +49,7 @@ def get_data(x):
     #HR,HR_quality,SpO2,SpO2_quality,value_classification,Value_Activity,Quality_classification,
     #steps,HRV,HRV_quality,Respiration_Rate,RR_quality
 
-        HR = x[:,0,:]
+        HR = x[:,0,:] # Hear Rate
         HR_q = x[:,1,:]
         HR_q_onehot =  F.one_hot(HR_q.view(1,-1), 101).view(HR_q.size(0), HR_q.size(1), 101)
         HR = torch.mul(HR.unsqueeze(2).float(), HR_q_onehot.float())
@@ -61,18 +61,18 @@ def get_data(x):
         SPo2 = torch.mul(SPo2.unsqueeze(2).float() , SPo2_q_onehot.float())
         SPo2 = SPo2.permute(0,2,1)
 
-        B_p = x[:,4,:].float().unsqueeze(1)
+        B_p = x[:,4,:].float().unsqueeze(1) # Blood Perfusion
         activity_value = x[:,6,:].float().unsqueeze(1)
         #steps = x[:,8,:].float().unsqueeze(1)
-        B_w = x[:,9,:].float().unsqueeze(1)
+        B_w = x[:,9,:].float().unsqueeze(1) # Blood pressure wave
         
-        HRV = x[:,10,:]
+        HRV = x[:,10,:] # Heart rate variability
         HRV_q = x[:,11,:]
         HRV_q_onehot = F.one_hot(HRV_q.view(1,-1), 101).view(HRV_q.size(0), HRV_q.size(1), 101)
         HRV = torch.mul(HRV.unsqueeze(2).float(), HRV_q_onehot.float())
         HRV = HRV.permute(0,2,1)
         
-        RR = x[:,12,:]
+        RR = x[:,12,:] # Respiration rate
         RR_q = x[:,13,:]
         RR_q_onehot = F.one_hot(RR_q.view(1,-1), 101).view(RR_q.size(0), RR_q.size(1), 101)
         RR = torch.mul(RR.unsqueeze(2).float() , RR_q_onehot.float())
@@ -84,11 +84,11 @@ def get_data(x):
         Energy = torch.mul(Energy.unsqueeze(2).float() , Energy_q_onehot.float())
         Energy = Energy.permute(0,2,1)
         
-        local_temp_1 = ((x[:,18,:].float())/100).unsqueeze(1)
-        local_temp_2 = ((x[:,19,:].float())/100).unsqueeze(1)
+        local_temp_1 = ((x[:,18,:].float())/100).unsqueeze(1) # Temperature
+        local_temp_2 = ((x[:,19,:].float())/100).unsqueeze(1) # Temperature
 
-        object_temp_1 = ((x[:,20,:].float())/100).unsqueeze(1)
-        object_temp_2 = ((x[:,21,:].float())/10).unsqueeze(1)
+        object_temp_1 = ((x[:,20,:].float())/100).unsqueeze(1) # Temperature
+        object_temp_2 = ((x[:,21,:].float())/10).unsqueeze(1) # Temperature
         
         data = torch.cat((HR, SPo2, B_p, activity_value, B_w, HRV, RR, Energy, local_temp_1, local_temp_2,
                          object_temp_1, object_temp_2), dim=1)
