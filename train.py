@@ -53,7 +53,7 @@ def get_data(x):
         HR = torch.mul(HR.unsqueeze(2).float(), HR_q_onehot.float())
         HR = HR.permute(0,2,1)   
 
-        SPo2 = x[:,2,:]
+        SPo2 = x[:,2,:] # Oxygen saturation
         SPo2_q = x[:,3,:]
         SPo2_q_onehot = F.one_hot(SPo2_q.reshape(1,-1), 101).reshape(SPo2_q.size(0), SPo2_q.size(1), 101)
         SPo2 = torch.mul(SPo2.unsqueeze(2).float() , SPo2_q_onehot.float())
