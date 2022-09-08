@@ -6,15 +6,20 @@ import pickle
 import numpy as np
 import pandas as pd
 from math import sqrt
+from collections import Counter
+from operator import itemgetter
 import matplotlib.pyplot as plt
+from sklearn.utils import shuffle
+from datetime import datetime, timedelta
 from sklearn.metrics import roc_auc_score
 from sklearn.metrics import roc_curve, auc
+
 
 from openpyxl.utils import get_column_letter, column_index_from_string
 
 def get_data(x):
     bs, _, l = x.size()
-    
+
     HR = x[:,0,:]   
     HR_q = x[:,1,:]
     HR_q_onehot =  F.one_hot(HR_q.view(1,-1), 101).view(HR_q.size(0), HR_q.size(1), 101)
@@ -73,7 +78,7 @@ def h_preparation(loader, model, device):
         e_lst = []
         
         for i, ((x, label, _, time_s, time_e)) in enumerate(loader):
-            print("excluding some patients with ids 1002 and 1026")
+            # excluding some patients with ids 1002 and 1026
             idx =  (label==1002) + (label==1026)
             x = torch.cat(x, dim=1)
             x = x[~idx, :, :, :]
@@ -94,7 +99,7 @@ def h_preparation(loader, model, device):
         
         return h_total, label_total, s_tensor, e_tensor
 
-def find_x_best(h_query, h_ref, num_neighbour=1, T=-1):
+def find_x_best(h_query, h_ref, num_neighbour=1, T=-1, return_index=False):
     with torch.no_grad():
         norm_query = h_query.norm(dim=1).view(-1,1)
         h_query = h_query/norm_query
@@ -102,30 +107,36 @@ def find_x_best(h_query, h_ref, num_neighbour=1, T=-1):
         
         if T!=-1:
             scores = torch.exp(torch.matmul(h_query, h_ref.transpose(1,0))/T)
+            print("take exp")
         else:
             scores = torch.matmul(h_query, h_ref.transpose(1,0))   #[query_bs, ref_bs]
         
         if num_neighbour!=-1:
-            cos_score, _ = scores.topk(num_neighbour, dim=1, largest=True, sorted=True) 
-            print(cos_score.size())
+            cos_score, indices_best = scores.topk(num_neighbour, dim=1, largest=True, sorted=True) 
             cos_score = cos_score.mean(dim=-1).view(-1, 1)
         else:
             cos_score = scores.mean(dim=1).view(-1, 1)
             
         cos_norm_score = cos_score * norm_query
-        return cos_score.squeeze(), cos_norm_score.squeeze()
+        if return_index:
+             return cos_score.squeeze(), cos_norm_score.squeeze(), indices_best.squeeze()
+        else:
+            return cos_score.squeeze(), cos_norm_score.squeeze()
 
     
 
 
-def calculate_aucroc(s_1, s_2): 
+def calculate_aucroc(s_1, s_2, flag=False): 
     with torch.no_grad():   
         l1 = torch.zeros(s_1.size(0))
         l2 = torch.ones(s_2.size(0))
         label = torch.cat((l1, l2),dim=0).view(-1, 1).cpu().numpy()
         scores = torch.cat((s_1, s_2), dim=0).cpu().numpy()
         FPR, TPR, _ = roc_curve(label, scores, pos_label=0)
-        return auc(FPR, TPR)
+        if flag:
+            return FPR, TPR, auc(FPR, TPR)
+        else:    
+            return auc(FPR, TPR)
     
     
 def dist_plot(score_ind, score_ood, title):
@@ -141,17 +152,16 @@ def dist_plot(score_ind, score_ood, title):
         
         
 class RawDataset(data.Dataset):
-    def __init__(self, dataset, audio_window, num_crops, downsample=False):
+    def __init__(self, dataset, window_size, num_crops):
         self.dataset  = dataset 
-        self.audio_window = audio_window 
+        self.window_size = window_size 
         self.num_crops = num_crops
-        self.downsample = downsample
     def __len__(self):
         return len(self.dataset)    
     
     def resize(self, seq):
-        index = np.random.randint(len(seq) - self.audio_window + 1)
-        return np.expand_dims(seq[index:index+self.audio_window], axis=0)
+        index = np.random.randint(len(seq) - self.window_size + 1)
+        return np.expand_dims(seq[index:index+self.window_size], axis=0)
     def __getitem__(self, index):
         pat_data = self.dataset[index]
         seq_len = len(pat_data[0])
@@ -218,7 +228,7 @@ def standard_error_of_mean(input_x, title):
     e = np.array(np.std(input_x))
     mean = np.mean(y)
     print(f'{title} scores: {np.round(mean, 3)}±{np.round(e, 3)}')
-    return 
+    return np.round(mean, 3), np.round(e, 3)
     
 
 def sen_spec95(s_1, s_2):
@@ -256,7 +266,7 @@ def AUROC_95CI(test, ood, positive=1):
         lower = 0
     if upper > 1:
         upper = 1
-    return (np.round(lower, 2), np.round(upper, 2))
+    return (np.round(lower, 4), np.round(upper, 4))
 
 
 def make_dict(label, time_s, time_e, score):
@@ -371,7 +381,7 @@ def cutoff_youdens(s_1, s_2):
 
 
 def remove_buffer(input_column):
-    xls = pd.ExcelFile(r"data_preparation/220311_H2017A_Annotation_Rahil.xlsx") 
+    xls = pd.ExcelFile(r"data_preparation/220720_H2017A_Annotation_Rahil.xlsx") 
     data_sheet = xls.parse(0)
     data_sheet = data_sheet[:1913]
 
@@ -391,18 +401,119 @@ def remove_buffer(input_column):
             Dict_SCC_infectious_performance[key]=int(value)
     specific_keys = [k for k,v in Dict_SCC_infectious_performance.items() if v == 0]        
     return specific_keys
+
+
+
+def score_ps(h_query, h_ref, label_query, label_ref, start, end, num_crops):
+    '''
+    Compute Patient Specific Scores
+     For each patient in the ood(scc) set we find the closest from its regular set from the training data
+    '''
+    cos_score_lst = []
+    cos_norm_lst = []
+    no_regular_lst = []
+    label_lst = []
+    start_lst = []
+    end_lst = []
+    label_query_repeat = label_query.repeat_interleave(num_crops)
+    with torch.no_grad():
+        norm_query = h_query.norm(dim=1).view(-1,1)
+        h_query = F.normalize(h_query, dim=1 , p=2)
+        h_ref = F.normalize(h_ref, dim=1 , p=2)
+        unique_query = torch.unique(label_query)
+        for i in unique_query:
+            if i.item() in label_ref:
+                h_ref1 = h_ref[label_ref==i.item()]
+                h_query1 = h_query[label_query_repeat==i.item()]
+                norm_query1 = norm_query[label_query_repeat==i.item()]
+                scores = torch.matmul(h_query1, h_ref1.transpose(1,0))   #[query_bs, ref_bs]
+                cos_score, indices_best = scores.topk(1, dim=1, largest=True, sorted=True) 
+                cos_score_lst.append(cos_score.squeeze())  
+                cos_norm_lst.append(cos_score * norm_query1)
+                label_lst.append(label_query[label_query==i.item()])
+                start_lst.append(start[label_query==i.item()])
+                end_lst.append(end[label_query==i.item()])
+            else:
+                no_regular_lst.append(i.item())
+        print(f"These patients did not have any regular samples in the test set: {no_regular_lst}")
+        lbl_updated = torch.cat(label_lst, dim=0).squeeze()
+        start_updated = torch.cat(start_lst, dim=0).squeeze()
+        end_updated = torch.cat(end_lst, dim=0).squeeze()
+        return torch.cat(cos_score_lst, dim=0), lbl_updated, start_updated, end_updated
     
-### 95% confidence interval sensitivity and specificity
-# from sklearn.metrics import confusion_matrix
-# CM=confusion_matrix(label.cpu(), pred.cpu())
-# TN = CM[0][0] #Healthy people correctly identified as healthy
-# FN = CM[1][0] #Sick people incorrectly identified as healthy
-# TP = CM[1][1] #Sick people correctly identified as sick
-# FP = CM[0][1] #Healthy people incorrectly identified as sick
-# sensitivity  = TP / (TP+FN)
-# specificity  = TN / (TN+FP)
-# print('sensitivity:', sensitivity)
-# print('specificity:', specificity)
- 
-# Se_sen = 1.96 * np.sqrt((sensitivity*(1-sensitivity))/(TP+FN))    
-# Se_spe = 1.96 * np.sqrt((specificity*(1-specificity))/(TN+FP)) 
+
+
+def build_null_dist(test_lst, train_info, h_net, param_info, device):
+    window_size, num_crops, batch_size, nb, t, buffer, ps = param_info
+    
+    with torch.no_grad():
+        test_label = []
+        test_label = np.array([test_lst[i][-4] for i in range(len(test_lst))])
+        test_date = torch.tensor([test_lst[i][3][:3] for i in range(len(test_lst))]) #start
+
+        h_train, train_lbl, train_date = train_info
+        train_label = train_lbl.repeat_interleave(num_crops)
+        train_dates = train_date[:, 0:3].repeat_interleave(num_crops, dim=0)
+
+        null_dist = []
+        label_lst = []
+        start_lst = []
+        end_lst = []
+        for j in np.unique(test_label):
+            print("Patient ID: ", j.item())
+            idx_sel = ((torch.tensor(test_label)==j).nonzero()).view(-1)
+            data_sel = [test_lst[index] for index in idx_sel]
+            date_all = test_date[test_label==j, 0:3]
+            date_uq = torch.unique(date_all, dim=0)
+
+            date_lst = [datetime(date_uq[k, 0], date_uq[k, 1], date_uq[k, 2]).date() for k in np.arange(len(date_uq))] 
+
+            if ps:
+                train_sel = h_train[train_label==j]
+                train_date_j = train_dates[train_label==j, 0:3]
+            if not ps:
+                train_sel = h_train.clone()
+                train_date_j = train_dates[:, 0:3].clone()
+
+            for i in np.arange(len(date_uq)):
+                y, m , d = date_lst[i].year, date_lst[i].month, date_lst[i].day
+                idx_cu = (date_all[:, 0]==y)&(date_all[:, 1]==m)&(date_all[:,2]==d)
+                data_query = []
+                data_query = [data_sel[index] for index in idx_cu.nonzero().view(-1)]
+
+                y_date = (date_lst[i] + timedelta(days=-1))
+                yy_date = (date_lst[i] + timedelta(days=-2))
+                t_date = (date_lst[i] + timedelta(days=1))
+
+                idx_y = (train_date_j[:, 0]==y_date.year)&(train_date_j[:, 1]==y_date.month)&(train_date_j[:,2]==y_date.day)
+                idx_yy = (train_date_j[:, 0]==yy_date.year)&(train_date_j[:, 1]==yy_date.month)&(train_date_j[:,2]==yy_date.day)
+                idx_to = (train_date_j[:, 0]==t_date.year)&(train_date_j[:, 1]==t_date.month)&(train_date_j[:,2]==t_date.day)
+                idx_td = (train_date_j[:, 0]==y)&(train_date_j[:, 1]==m)&(train_date_j[:,2]==d)
+
+
+                if not ps:
+                    # Evaluation for non-patient specific 
+                    idx_y = idx_y & torch.tensor(train_label==j)
+                    idx_yy = idx_yy & torch.tensor(train_label==j)
+                    idx_to = idx_to & torch.tensor(train_label==j)
+                    idx_td = idx_td & torch.tensor(train_label==j)
+
+                idx_or = torch.tensor([ x or y or z or t for (x, y, z, t) in zip(idx_y, idx_yy, idx_to, idx_td)]).view(-1)
+                ref_idx = (~idx_or)
+                h_ref = train_sel[ref_idx]
+
+                if len(h_ref)!=0:
+                    test_query = RawDataset(data_query, window_size, num_crops=num_crops)
+                    query_ld = data.DataLoader(test_query, batch_size=batch_size, shuffle=False)
+                    h_query, _, query_start, query_end = h_preparation(query_ld, h_net, device)
+
+                    test_cos, _, _ = find_x_best(h_query, h_ref, num_neighbour=nb, T=t, return_index=True)
+                    test_cos = (test_cos.view(len(test_cos)//num_crops, num_crops)).mean(-1)
+
+                    null_dist.extend(test_cos)
+                    label_lst.extend(j*torch.ones(len(test_cos)).long())
+                    start_lst.extend(query_start)
+                    end_lst.extend(query_end)
+
+        return torch.stack(null_dist), torch.stack(label_lst), torch.stack(start_lst), torch.stack(end_lst)
+
