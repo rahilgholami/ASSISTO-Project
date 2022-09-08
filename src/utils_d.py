@@ -93,10 +93,7 @@ def h_preparation(loader, model, device):
         e_lst = []
         
         for i, ((x, label, _, time_s, time_e)) in enumerate(loader):
-            # excluding some patients with ids 1002 and 1026
-            idx =  (label==1002) + (label==1026)
             x = torch.cat(x, dim=1)
-            x = x[~idx, :, :, :]
             bs, num_crop, L, nf = x.size()
             x = x.view(bs*num_crop, L, nf)
             x = (x.permute(0,2,1)).to(device)
