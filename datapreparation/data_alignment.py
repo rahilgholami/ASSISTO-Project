@@ -57,7 +57,7 @@ if __name__=='__main__':
     wearable_dir = 'path/to/data/directory'
     combined_files = [fn for fn in os.listdir(wearable_dir) if '_combined_no_ibi.csv' in fn]
     
-    dataset_dir = 'name of the output file'
+    dataset_dir = 'output file name'
     output_dir = os.path.join(wearable_dir, dataset_dir)
     if not os.path.exists(output_dir):
         os.mkdir(output_dir)
