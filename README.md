@@ -11,5 +11,5 @@ To read the data and split them to training and test sets, run the following cod
 ## 2. Training
 
 ```train
-python train.py --epochs 500 --batch_size 128 --hdim 128 --input_channel 512 --temperature 0.07
+python train.py --epochs 500 --batch_size 128 --hdim 128 --input_channel 512 --temperature 0.07 --window_size 1000
 ```
