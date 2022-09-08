@@ -6,9 +6,9 @@ import pickle
 import numpy as np
 
 class RawDataset(data.Dataset):
-    def __init__(self, dataset, audio_window, train=True):
+    def __init__(self, dataset, window_size, train=True):
         self.dataset  = dataset 
-        self.audio_window = audio_window 
+        self.window_size = window_size 
         self.train = train
         
     def __len__(self):
@@ -17,13 +17,15 @@ class RawDataset(data.Dataset):
     def __getitem__(self, index):
         pat_data = self.dataset[index] 
         seq_len = len(pat_data[0])
-        index1 = np.random.randint(seq_len - self.audio_window + 1) 
-        index2 = np.random.randint(seq_len - self.audio_window + 1)
+        
+        index1 = np.random.randint((seq_len//2) - self.window_size + 1)
+        index2 = np.random.randint((seq_len//2) - self.window_size + 1) + (seq_len//2)
+
         id_pat = pat_data[1]
         if self.train:
-            return pat_data[0][index1:index1+self.audio_window], pat_data[0][index2:index2+self.audio_window], id_pat
+            return pat_data[0][index1:index1+self.window_size], pat_data[0][index2:index2+self.window_size], id_pat
         else:
-            return pat_data[0][:self.audio_window], pat_data[1], pat_data[2], pat_data[3], pat_data[4]
+            return pat_data[0][:self.window_size], pat_data[1], pat_data[2], pat_data[3], pat_data[4]
        
       
     
@@ -62,6 +64,7 @@ def count_parameters(model):
     return sum(p.numel() for p in model.parameters() if p.requires_grad)
 
 class SupConLoss(nn.Module):
+    # Reference https://github.com/HobbitLong/SupContrast/blob/master/losses.py
     """Supervised Contrastive Learning: https://arxiv.org/pdf/2004.11362.pdf.
     It also supports the unsupervised contrastive loss in SimCLR"""
     def __init__(self, temperature=0.07, contrast_mode='all',
