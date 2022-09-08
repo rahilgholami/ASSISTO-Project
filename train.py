@@ -235,9 +235,9 @@ def main():
         os.makedirs('runs') 
     if not os.path.isdir(f'results/{exp}'):
         os.makedirs(f'results/{exp}') 
-    if not os.path.isdir(f'ckpt_splits/{exp}'):
+    if not os.path.isdir(f'ckpts/{exp}'):
         print("Creating the directory")
-        os.makedirs(f'ckpt_splits/{exp}') 
+        os.makedirs(f'ckpts/{exp}') 
         
     writer = SummaryWriter(f'runs/{exp}')
     ## Start training 
@@ -246,7 +246,7 @@ def main():
         train(args, model, device, train_loader, optimizer, epoch, writer)
         torch.save(
                 {'model': model.module.state_dict(), 'args': args},
-                f'ckpt_splits/{exp}/h_net.pt')
+                f'ckpts/{exp}/h_net.pt')
         if epoch%10 ==0:
             cos_auc = test(args, model, exp, device, train_loader1, test_loader, ood_loader)
 
