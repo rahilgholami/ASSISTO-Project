@@ -195,7 +195,7 @@ def main():
     parser.add_argument('--batch-size', type=int, default=128)
     parser.add_argument('--lr', type=int, default=1e-3, help='learning rate')
     parser.add_argument('--weight-decay', type=int, default=1e-3)
-    parser.add_argument('--window-size', type=int, default=1000) 
+    parser.add_argument('--window-size', type=int, default=1000, help='the number of measurements over time') 
     parser.add_argument('--hdim', type=int, default=128, help='dimension of latent space')
     parser.add_argument('--input-channel', type=int, default=512, help='number of input channels')
     parser.add_argument('--no-cuda', action='store_true', default=False, help='disables CUDA training')
