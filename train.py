@@ -98,7 +98,7 @@ def x_h_preparation(loader, model, device):
     with torch.no_grad():
         h_lst = []
         for i, ((x, _, _, _, _)) in enumerate(loader):
-            x = (x.permute(0,2,1)).to(device)
+            x = (x.permute(0, 2, 1)).to(device)
             h = model(get_data(x))            
             h_lst.append(h)        
         h_total = torch.cat(h_lst, dim=0)
@@ -106,20 +106,20 @@ def x_h_preparation(loader, model, device):
 
 def find_x_best(h_query, h_ref):
     with torch.no_grad():
-        norm_query = h_query.norm(dim=1).view(-1,1)
+        norm_query = h_query.norm(dim=1).view(-1, 1)
         h_query = h_query/norm_query
         h_ref = h_ref/h_ref.norm(dim=1).view(-1, 1)
-        scores = torch.matmul(h_query, h_ref.transpose(1,0))   #[query_bs, ref_bs]
+        scores = torch.matmul(h_query, h_ref.transpose(1, 0))   #[query_bs, ref_bs]
         cos_score, best_idx = scores.topk(1, dim=1)  #select top k best  
         cos_norm_score = cos_score * norm_query
         return cos_score.squeeze(), cos_norm_score.squeeze(), norm_query
     
 def calculate_aucroc(s_1, s_2, name): 
     with torch.no_grad():
-        file = open(name+"_auroc.txt","a+")    
+        file = open(name+"_auroc.txt", "a+")    
         l1 = torch.zeros(s_1.size(0))
         l2 = torch.ones(s_2.size(0))
-        label = torch.cat((l1, l2),dim=0).view(-1, 1).cpu().numpy()
+        label = torch.cat((l1, l2), dim=0).view(-1, 1).cpu().numpy()
         scores = torch.cat((s_1, s_2), dim=0).cpu().numpy()
         FPR, TPR, _ = roc_curve(label, scores, pos_label=0)
         print(f"AUC: {auc(FPR, TPR)}") 
@@ -153,8 +153,8 @@ def train(args, model, device, loader, optimizer, epoch, writer):
     
     for batch_idx, (x_1, x_2, labels) in enumerate(loader):
         optimizer.zero_grad()
-        x_1 = (x_1.permute(0,2,1)).to(device) 
-        x_2 = (x_2.permute(0,2,1)).to(device)
+        x_1 = (x_1.permute(0, 2, 1)).to(device) 
+        x_2 = (x_2.permute(0, 2, 1)).to(device)
         
         bsz = labels.shape[0]
         x_all = torch.cat((get_data(x_1), get_data(x_2)), dim=0) 
@@ -256,13 +256,12 @@ def main():
         
     writer = SummaryWriter(f'runs/{exp}')
     ## Start training 
-    cos_auc_old = 0
     for epoch in range(args.epochs + 1):
         train(args, model, device, train_loader, optimizer, epoch, writer)
         torch.save(
                 {'model': model.module.state_dict(), 'args': args},
                 f'ckpts/{exp}/h_net.pt')
-        if epoch%10 ==0:
+        if epoch%10 == 0:
             cos_auc = test(args, model, exp, device, train_loader1, test_loader, ood_loader)
 
     writer.close()
