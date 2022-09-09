@@ -46,15 +46,18 @@ device = 'cuda'
 #############################################################
 
 def get_data(x):
+        
+# device provides quality score for some specific parameters. These parameters are encoded with the respective quality index
+# into a multi-dimensional vector space
 
         HR = x[:, 0, :] # Hear Rate
-        HR_q = x[:, 1, :]
+        HR_q = x[:, 1, :] # quality index
         HR_q_onehot =  F.one_hot(HR_q.view(1, -1), 101).view(HR_q.size(0), HR_q.size(1), 101)
         HR = torch.mul(HR.unsqueeze(2).float(), HR_q_onehot.float())
         HR = HR.permute(0, 2, 1)   
 
         SPo2 = x[:, 2, :] # Oxygen saturation
-        SPo2_q = x[:, 3, :]
+        SPo2_q = x[:, 3, :] # quality index
         SPo2_q_onehot = F.one_hot(SPo2_q.reshape(1, -1), 101).reshape(SPo2_q.size(0), SPo2_q.size(1), 101)
         SPo2 = torch.mul(SPo2.unsqueeze(2).float() , SPo2_q_onehot.float())
         SPo2 = SPo2.permute(0, 2, 1)
@@ -65,19 +68,19 @@ def get_data(x):
         B_w = x[:, 9, :].float().unsqueeze(1) # Blood pressure wave
         
         HRV = x[:, 10, :] # Heart rate variability
-        HRV_q = x[:, 11, :]
+        HRV_q = x[:, 11, :] # quality index
         HRV_q_onehot = F.one_hot(HRV_q.view(1, -1), 101).view(HRV_q.size(0), HRV_q.size(1), 101)
         HRV = torch.mul(HRV.unsqueeze(2).float(), HRV_q_onehot.float())
         HRV = HRV.permute(0, 2, 1)
         
         RR = x[:, 12, :] # Respiration rate
-        RR_q = x[:, 13, :]
+        RR_q = x[:, 13, :] # quality index
         RR_q_onehot = F.one_hot(RR_q.view(1, -1), 101).view(RR_q.size(0), RR_q.size(1), 101)
         RR = torch.mul(RR.unsqueeze(2).float() , RR_q_onehot.float())
         RR = RR.permute(0, 2, 1)
         
         Energy = x[:, 14, :] 
-        Energy_q = x[:, 15, :]
+        Energy_q = x[:, 15, :] # quality index
         Energy_q_onehot = F.one_hot(Energy_q.view(1, -1), 101).view(Energy_q.size(0), Energy_q.size(1), 101)
         Energy = torch.mul(Energy.unsqueeze(2).float() , Energy_q_onehot.float())
         Energy = Energy.permute(0, 2, 1)
