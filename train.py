@@ -108,6 +108,9 @@ def x_h_preparation(loader, model, device):
         return h_total
 
 def find_x_best(h_query, h_ref):
+'''
+for a given test sample find the closet match from the training set (highest cosine similarity).
+'''
     with torch.no_grad():
         norm_query = h_query.norm(dim=1).view(-1, 1)
         h_query = h_query/norm_query
