@@ -43,8 +43,8 @@ if __name__=="__main__":
     parser.add_argument('--window_size', default=1000, type=int, help='Length of input sequence')
     parser.add_argument('--t', default=-1, type=int, help='Temperature')
     parser.add_argument('--nb', default=1, type=int, help='Number of neighbours')
-    parser.add_argument('--cohort', default='Out', type=str, choices=["In", "Out", "Total"])
-    parser.add_argument('--case', default='all_SCC', type=str, choices=["Infectious", "all_SCC"])
+    parser.add_argument('--cohort', default='Outpatient', type=str, choices=["Inpatient", "Outpatient", "Total"])
+    parser.add_argument('--case', default='allSCCs', type=str, choices=["Infectious", "allSCCs"])
     args = parser.parse_args()
         
     ############################################# loading datasets #############################################
