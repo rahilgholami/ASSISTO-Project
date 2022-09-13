@@ -20,3 +20,10 @@ To evaluate the trained model, run this command:
 ```evaluation
 python evaluation.py --model_path <path to checkpoint> --data_path <path to data>
 ```
+
+Data folder includes following files:
+```
+train_set.pickle
+test_set.pickle
+ood_set.pickle
+```
