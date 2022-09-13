@@ -22,7 +22,7 @@ from sklearn.utils import resample
 from sklearn.metrics import roc_auc_score
 from sklearn.metrics import roc_curve, auc
 
-from src.utils_d_github import *
+from src.utils_d import *
 from src.resnet1d import ResNet1D
 
 import warnings
