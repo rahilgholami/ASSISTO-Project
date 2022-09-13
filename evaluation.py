@@ -34,7 +34,7 @@ if __name__=="__main__":
     parser = argparse.ArgumentParser('Evaluation')
     parser.add_argument('--ps', default=False, type=str, help='Patient Specific')
     parser.add_argument('--save_path', type=str, default='', help='where to save results')
-    parser.add_argument('--save_results', type=str, default = True)
+    parser.add_argument('--save_results', type=str, default = False)
     parser.add_argument('--model_path', type=str, default='', help='path to checkpoint')
     parser.add_argument('--data_path', type=str, default='', help='path to data')
     parser.add_argument('--bootstrapping', default=True, type=str, help='Bootstrapping the minor class')
@@ -143,17 +143,17 @@ if __name__=="__main__":
             print("Reference set is the whole training set \n")
             
             print("Best matches of regular hours fto reference set build the null distriubtion \n")
-            test_cos, _, _ = find_x_best(h_test, h_train, num_neighbour=args.nb, T=args.t, return_index=True)    
+            test_cos, _, _ = find_x_best(h_test, h_train, num_neighbour=args.nb, T=args.t)    
             test_cos = (test_cos.view(len(test_cos)//args.num_crops, args.num_crops)).mean(-1)
             
             print("Best matches of ood hours to reference set form the alternative distribution \n")
-            ood_cos, ood_cos_norm, _ = find_x_best(h_ood, h_train, num_neighbour=args.nb, T=args.t, return_index=True)
+            ood_cos, _, _ = find_x_best(h_ood, h_train, num_neighbour=args.nb, T=args.t)
             ood_cos = (ood_cos.view(len(ood_cos)//args.num_crops, args.num_crops)).mean(-1)
         
 
 
-        standard_error_of_mean(1 - test_cos.cpu().numpy(), 'regular')
-        standard_error_of_mean(1 - ood_cos.cpu().numpy(), 'irregular')
+        standard_error_of_mean(1 - test_cos.cpu().numpy(), 'regular samples')
+        standard_error_of_mean(1 - ood_cos.cpu().numpy(), 'irregular samples')
         
         print("-----------------------------------------------------\n")
         print('If we collect scores from all patients and then form null and alternative distributions\n')
