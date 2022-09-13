@@ -47,11 +47,6 @@ if __name__=="__main__":
     parser.add_argument('--case', default='all_SCC', type=str, choices=["Infectious", "all_SCC"])
     args = parser.parse_args()
     
-    if args.case == 'Infectious':
-        column = "Regular day_infectious [1 = 'regular day', 0 = 'irregular day']"
-    else:    
-        column = "Regular day_all [1 = 'regular day', 0 = 'irregular day']"
-        
     ############################################# loading datasets #############################################
     
     assert os.path.exists(args.data_path)
