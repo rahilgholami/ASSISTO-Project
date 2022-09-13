@@ -1,10 +1,10 @@
-# SCC Project
+# ASSISTO Project
 
 ## 1. Data Preparation
 
 Let's start by preparing data. 
 
-By runing `datapreparation/data_alignment.py`, we align the time series with the real time and split them to  one-hour intervals.
+By runing `datapreparation/data_alignment.py`, we align the time series with the real daytime and split them to  one-hour intervals.
 
 To read the data and split them to training and test sets, run the following code, `datapreparation/train_test_split.ipynb`.
 
