@@ -17,3 +17,6 @@ python train.py --epochs 500 --batch_size 128 --lr 0.001 --hdim 128 --input_chan
 
 ## 3. Evaluation
 To evaluate the trained model, run this command:
+```evaluation
+evaluation.py
+```
