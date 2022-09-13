@@ -22,7 +22,7 @@ from sklearn.utils import resample
 from sklearn.metrics import roc_auc_score
 from sklearn.metrics import roc_curve, auc
 
-from src.utils_d import *
+from src.utils_d_github import *
 from src.resnet1d import ResNet1D
 
 import warnings
@@ -32,7 +32,7 @@ device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
 if __name__=="__main__":
     parser = argparse.ArgumentParser('Evaluation')
-    parser.add_argument('--ps', default=True, type=str, help='Patient Specific')
+    parser.add_argument('--ps', default=False, type=str, help='Patient Specific')
     parser.add_argument('--save_path', type=str, default='', help='where to save results')
     parser.add_argument('--save_results', type=str, default = True)
     parser.add_argument('--model_path', type=str, default='', help='path to checkpoint')
@@ -46,7 +46,7 @@ if __name__=="__main__":
     parser.add_argument('--cohort', default='Out', type=str, choices=["In", "Out", "Total"])
     parser.add_argument('--case', default='all_SCC', type=str, choices=["Infectious", "all_SCC"])
     args = parser.parse_args()
-    
+        
     ############################################# loading datasets #############################################
     
     assert os.path.exists(args.data_path)
@@ -57,7 +57,6 @@ if __name__=="__main__":
     ##############################  bootstrapping the minority class ########################################### 
     
     if args.bootstrapping:
-        
         l_test = len(test_data)
         l_ood = len(ood_data)
         
@@ -128,7 +127,7 @@ if __name__=="__main__":
             print("Evaluation strategy is patient specific \n")
             print("Reference set is the collection of all patient specific hours from training set \n")
            
-            print("Best matches of regular hours from test set build the null distriubtion \n")
+            print("Best matches of regular hours to reference set build the null distriubtion \n")
             test_cos, label_test, start_test, end_test = score_ps(h_test, h_train, label_test, label_train, start_test, 
                                                                   end_test, args.num_crops)
             test_cos = (test_cos.view(len(test_cos)//args.num_crops, args.num_crops)).mean(-1)
@@ -139,11 +138,19 @@ if __name__=="__main__":
             ood_cos = (ood_cos.view(len(ood_cos)//args.num_crops, args.num_crops)).mean(-1)
             
         else:
+            print("-----------------------------------------------------\n")
+            print("Evaluation strategy is non-patient specific \n")
+            print("Reference set is the whole training set \n")
+            
+            print("Best matches of regular hours fto reference set build the null distriubtion \n")
+            test_cos, _, _ = find_x_best(h_test, h_train, num_neighbour=args.nb, T=args.t, return_index=True)    
+            test_cos = (test_cos.view(len(test_cos)//args.num_crops, args.num_crops)).mean(-1)
+            
+            print("Best matches of ood hours to reference set form the alternative distribution \n")
             ood_cos, ood_cos_norm, _ = find_x_best(h_ood, h_train, num_neighbour=args.nb, T=args.t, return_index=True)
             ood_cos = (ood_cos.view(len(ood_cos)//args.num_crops, args.num_crops)).mean(-1)
         
-            test_cos, _, _ = find_x_best(h_test, h_train, num_neighbour=args.nb, T=args.t, return_index=True)    
-            test_cos = (test_cos.view(len(test_cos)//args.num_crops, args.num_crops)).mean(-1)
+
 
         standard_error_of_mean(1 - test_cos.cpu().numpy(), 'regular')
         standard_error_of_mean(1 - ood_cos.cpu().numpy(), 'irregular')
