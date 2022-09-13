@@ -128,13 +128,12 @@ if __name__=="__main__":
             print("Reference set is the collection of all patient specific hours from training set \n")
            
             print("Best matches of regular hours to reference set build the null distriubtion \n")
-            test_cos, label_test, start_test, end_test = score_ps(h_test, h_train, label_test, label_train, start_test, 
-                                                                  end_test, args.num_crops)
+            test_cos, label_test, start_test, end_test = score_ps(h_test, h_train, label_test, label_train, start_test, end_test, args.num_crops)
             test_cos = (test_cos.view(len(test_cos)//args.num_crops, args.num_crops)).mean(-1)
             
             print("Best matches of ood hours to reference set form the alternative distribution \n")
-            ood_cos, label_ood, start_ood, end_ood = score_ps(h_ood, h_train, label_ood, label_train, start_ood, end_ood,
-                                                              args.num_crops) 
+            ood_cos, label_ood, start_ood, end_ood = score_ps(h_ood, h_train, label_ood, label_train, start_ood, end_ood, args.num_crops) 
+                                                              
             ood_cos = (ood_cos.view(len(ood_cos)//args.num_crops, args.num_crops)).mean(-1)
             
         else:
