@@ -97,7 +97,7 @@ def get_data(x):
     
 #############################################################
 
-def x_h_preparation(loader, model, device):        
+def h_preparation(loader, model, device):        
     with torch.no_grad():
         h_lst = []
         for i, ((x, _, _, _, _)) in enumerate(loader):
@@ -138,9 +138,9 @@ def test(args, model, exp, device, train_loader, test_loader, ood_loader):
     model.eval()
     print("in test")
     with torch.no_grad():
-        h_train = x_h_preparation(train_loader, model, device)
-        h_test = x_h_preparation(test_loader, model, device)
-        h_ood = x_h_preparation(ood_loader, model, device)
+        h_train = h_preparation(train_loader, model, device)
+        h_test = h_preparation(test_loader, model, device)
+        h_ood = h_preparation(ood_loader, model, device)
         test_cos, test_cos_norm, test_norm = find_x_best(h_test, h_train)
         ood_cos, ood_cos_norm, ood_norm = find_x_best(h_ood, h_train)
 
