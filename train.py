@@ -194,6 +194,7 @@ def main():
     parser.add_argument('--test_data', default=None, help='path to test set')
     parser.add_argument('--ood_data', default=None, help='path to ood data')
     parser.add_argument('--epochs', type=int, default=500)
+    parser.add_argument('--save_step', type=int, default=10, help='Epoch steps to save model')
     parser.add_argument('--temperature', type=int, default=0.07, help='temperature in the loss function')
     parser.add_argument('--batch-size', type=int, default=128)
     parser.add_argument('--lr', type=int, default=1e-3, help='learning rate')
@@ -267,7 +268,7 @@ def main():
         torch.save(
                 {'model': model.module.state_dict(), 'args': args},
                 f'ckpts/{exp}/h_net.pt')
-        if epoch%10 == 0:
+        if epoch%args.save_step == 0:
             cos_auc = test(args, model, exp, device, train_loader1, test_loader, ood_loader)
 
     writer.close()
