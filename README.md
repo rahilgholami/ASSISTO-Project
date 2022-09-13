@@ -6,8 +6,8 @@ Let's start by preparing data.
 
 By runing `datapreparation/data_alignment.py`, we align the time series with the real daytime and split them to  one-hour intervals.
 
-To read the data and split them to training and test sets, run the following code, `datapreparation/train_test_split.ipynb`.
-Runing `datapreparation/train_test_split.ipynb` generates following files in format `.pickle`.
+To read the data and split them to training and test sets, run the following code, `datapreparation/train_test_split.ipynb`,
+which generates following files in format `.pickle`.
 ```
 train_set.pickle
 test_set.pickle
