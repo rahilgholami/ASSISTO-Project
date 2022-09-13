@@ -155,7 +155,7 @@ if __name__=="__main__":
         standard_error_of_mean(1 - ood_cos.cpu().numpy(), 'irregular samples')
         
         print("-----------------------------------------------------\n")
-        print('If we collect scores from all patients and then form null and alternative distributions\n')
+        print('If we collect scores from all patients and then form null and alternative distributions \n')
         print("%AUROC given hourly scores:", np.round(calculate_aucroc(test_cos, ood_cos)[-1] * 100, 2))
         
         # creating daily scores from hourly scores
@@ -164,7 +164,7 @@ if __name__=="__main__":
         print("%AUROC given daily scores:", np.round(calculate_aucroc(daily_test, daily_ood)[-1] * 100, 2))
         print("-----------------------------------------------------\n")
         
-        print('If we form null and alternative distributions for each single patient and then take average\n')
+        print('If we form null and alternative distributions for each single patient and then take average \n')
         tprs = []
         tprs_d = []
         mean_fpr = np.linspace(0, 1, 100)
