@@ -141,7 +141,7 @@ if __name__=="__main__":
             print("Evaluation strategy is non-patient specific \n")
             print("Reference set is the whole training set \n")
             
-            print("Best matches of regular hours fto reference set build the null distriubtion \n")
+            print("Best matches of regular hours to reference set build the null distriubtion \n")
             test_cos, _, _ = find_x_best(h_test, h_train, num_neighbour=args.nb, T=args.t)    
             test_cos = (test_cos.view(len(test_cos)//args.num_crops, args.num_crops)).mean(-1)
             
