@@ -1,4 +1,4 @@
-# ASSISTO Project
+## [Wearable based monitoring and self-supervised contrastive learning detect clinical complications during treatment of Hematologic malignancies](https://www.nature.com/articles/s41746-023-00847-2#additional-information)
 
 ## 1. Data Preparation
 
@@ -28,4 +28,18 @@ To evaluate the trained model, run this command:
 python evaluation.py --model_path <path to checkpoint> --data_path <path to data>
 ```
 
+## Citation
+
+```
+@article{jacobsen2023wearable,
+  title={Wearable based monitoring and self-supervised contrastive learning detect clinical complications during treatment of Hematologic malignancies},
+  author={Jacobsen, Malte and Gholamipoor, Rahil and Dembek, Till A and Rottmann, Pauline and Verket, Marlo and Brandts, Julia and J{\"a}ger, Paul and Baermann, Ben-Niklas and Kondakci, Mustafa and Heinemann, Lutz and others},
+  journal={npj Digital Medicine},
+  volume={6},
+  number={1},
+  pages={105},
+  year={2023},
+  publisher={Nature Publishing Group UK London}
+}
+```
 
