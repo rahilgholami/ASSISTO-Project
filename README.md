@@ -1,4 +1,4 @@
-## [Wearable based monitoring and self-supervised contrastive learning detect clinical complications during treatment of Hematologic malignancies](https://www.nature.com/articles/s41746-023-00847-2#additional-information)
+### [Wearable based monitoring and self-supervised contrastive learning detect clinical complications during treatment of Hematologic malignancies](https://www.nature.com/articles/s41746-023-00847-2#additional-information)
 
 ## 1. Data Preparation
 
