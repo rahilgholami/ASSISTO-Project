@@ -6,8 +6,8 @@ Let's start with the data preparation.
 
 By runing [`data_alignment.py`](https://github.com/rahilgholami/ASSISTO-Project/blob/main/datapreparation/data_alignment.py), we perform a crucial data alignment process that synchronizes the time series with real daytime and efficiently divides them into one-hour intervals. This data alignment step ensures that the time series data is organized consistently, enabling easier and more accurate analysis and interpretation.
 
-To read the data and split them to training and test sets, run the following code, `datapreparation/train_test_split.ipynb`,
-which generates following files in format `.pickle`.
+To read the data and split them to training and test sets, run the following code, [`datapreparation/train_test_split.ipynb`](https://github.com/rahilgholami/ASSISTO-Project/blob/main/datapreparation/train_test_split.ipynb),
+which generates following files in `.pickle` format.
 ```
 train_set.pickle
 test_set.pickle
