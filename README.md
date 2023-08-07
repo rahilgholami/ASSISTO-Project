@@ -2,7 +2,7 @@
 
 ## 1. Data Preparation
 
-Let's start by preparing data. 
+Let's start with the data preparation. 
 
 By runing [`data_alignment.py`](https://github.com/rahilgholami/ASSISTO-Project/blob/main/datapreparation/data_alignment.py), we perform a crucial data alignment process that synchronizes the time series with real daytime and efficiently divides them into one-hour intervals. This data alignment step ensures that the time series data is organized consistently, enabling easier and more accurate analysis and interpretation.
 
